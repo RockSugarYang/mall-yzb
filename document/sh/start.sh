@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 #export BUILD_ID=dontKillMe这一句很重要，这样指定了，项目启动之后才不会被Jenkins杀掉。
@@ -29,13 +30,17 @@ cd ${deploy_path}
 
 echo 'deploy_path' ${deploy_path}
 #获取运行编译好的进程ID，便于我们在重新部署项目的时候先杀掉以前的进程
-pid= ps -ef | grep ${jar_name} | grep -v grep | awk '{print $2}'
+pid=`ps -ef|grep ${jar_name}|grep -v grep|grep java|awk '{print $2}'`
 
 #杀掉以前可能启动的项目进程
-kill -9 ${pid}
+if [ -z "${pid}" ]
+then
+  echo Application is already stopped
+else
+  echo "process:${pid}"
+  kill -9 ${pid}
+  echo "kill:${pid}"
+fi
 
-#启动jar，指定SpringBoot的profiles为test，后台启动
-nohup java -jar -Xms256m -Xmx256m -XX:-HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -Dspring.profiles.active=${spring_profile} ${deploy_path}/${jar_name} &
-
-#将进程ID存入到pid文件中
-echo $! > ${deploy_path}/pid
+#启动jar
+nohup /usr/local/java/jdk1.8.0_261/bin/java -jar -Xms256m -Xmx256m -XX:-HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -Dspring.profiles.active=${spring_profile} ${deploy_path}/${jar_name} >/dev/null &
